@@ -8,14 +8,20 @@
 var express    = require('express');
 var app        = express();
 var bodyParser = require('body-parser');
+var expressSession = require('express-session');
+var cookieParser = require('cookie-parser');
 
+app.use(cookieParser());
+app.use(expressSession({secret:process.env.COOKIE_SECRET,
+                        saveUninitialized: true,
+                        resave: true}));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 var apiRouter = express.Router();
 
 apiRouter.get("/", function(req, res) {
-  res.json({ message: "Long live the stoke list!" });
+      res.json({ message: "Long live the stoke list!" });
 });
 
 app.use("/api", apiRouter);
