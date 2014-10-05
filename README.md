@@ -33,6 +33,8 @@ A short explanation of a complete `.env` file:
 
 ```
 DATABASE_URL: The url, including credentials to access the db. This can be either mysql, postges or sqlite3
+PORT: The port the server will run on
+COOKIE_SECRET: The secret used to encrypt the cookie. You should change this to a string of your choosing
 
 ### Creating your Database
 
