@@ -33,3 +33,13 @@ A short explanation of a complete `.env` file:
 
 ```
 DATABASE_URL: The url, including credentials to access the db. This can be either mysql, postges or sqlite3
+
+### Creating your Database
+
+The sample.env includes details for sqlite3. If you have no opinion, stick with it for development.
+
+Create your database by running:
+
+```
+./bin/migrate up
+```
