@@ -5,41 +5,66 @@
 var db = require('../lib/db');
 var sql = require('sql');
 
+var columns = [
+  'id',
+  'title',
+  'price',
+  'location',
+  'body',
+  'email',
+  'guid',
+  'sticky',
+  'emailVerified',
+  'deletedAt',
+  'createdAt',
+  'updatedAt'
+];
 
 var post = sql.define({
   name: 'posts',
-  columns: [
-    'id',
-    'title',
-    'price',
-    'location',
-    'body',
-    'email',
-    'guid',
-    'sticky',
-    'emailVerified',
-    'deletedAt',
-    'createdAt',
-    'updatedAt'
-  ],
+  columns: columns,
 });
 
 function Post(params){
-  this.id = params.id;
-  this.title = params.title;
-  this.price = params.price;
-  this.location = params.location;
-  this.body = params.body;
-  this.email = params.email;
-  this.guid = params.guid;
-  this.sticky = params.sticky;
-  this.emailVerified = params.emailVerified;
-  this.deletedAt = params.deletedAt;
-  this.createdAt = params.createdAt;
-  this.updatedAt = params.updatedA;
+  this.createdAt = new Date();
+  this.updatedAt = new Date();
+  this.sticky = false;
+
+  if (params){
+    for (var i in columns){
+      var attr = columns[i];
+      this[attr] = params[attr];
+    }
+  }
 
   this.save = function(cb){
-    // var sql =
+    var values = {};
+
+    for (var i in columns){
+      var attr = columns[i];
+      values[attr] = this[attr];
+    }
+
+    var sql = null;
+
+    // We strip ID here if it's not a number (aka not assigned by the db)
+    if (typeof this.id !== 'number'){
+      delete values['id'];
+      var sql = post.insert(values).toQuery();
+    }
+    else{
+      var sql = post.update(values).toQuery();
+    }
+
+    //TODO assign the newly-created id to `this` if it's a create
+    console.log(sql.text);
+    console.log(sql.values);
+    var t = this;
+    db.query(sql.text, sql.values, function (err, res) {
+      console.log(err, res);
+      t.id = res.lastInsertId;
+      cb(t);
+    });
   }
 }
 
@@ -48,12 +73,41 @@ Post.create = function(params, cb){
   post.save(cb);
 };
 
-Post.findByEmail = function(nick, cb){
+Post.findRecent = function(includeUnverified, cb){
+  var query = post
+    .select(post.star())
+    .from(post);
+
+  if (!includeUnverified){
+    query.where(post.verified.isNotNull());
+  }
+
+  query.order(post.createdAt);
+
+  db.query(query.toQuery().text, function(err, res){
+    if (err){
+      // TODO: real logging
+      console.log(err);
+    }
+    var posts = [];
+    for (var x in res.rows){
+      var post = new Post(res.rows[x]);
+      posts.push(post);
+    }
+    cb(err, posts);
+  });
+};
+
+Post.findRecentlyVerified = function(cb){
+  Post.findRecent(false, cb);
+};
+
+Post.findByEmail = function(email, cb){
   var sql = post
     .select(post.star())
     .from(post)
     .where(
-      post.nick.equals(nick)
+      post.email.equals(email)
     )
     .order(post.createdAt).toQuery();
 
