@@ -43,3 +43,9 @@ Create your database by running:
 ```
 ./bin/migrate up
 ```
+
+### Running the server
+
+Process management is delegated to [Foreman](https://github.com/ddollar/foreman). Go there, install it.
+
+To actually run the service, run `foreman start` in the project directory.
