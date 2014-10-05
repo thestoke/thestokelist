@@ -18,13 +18,9 @@ app.use(expressSession({secret:process.env.COOKIE_SECRET,
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-var apiRouter = express.Router();
+var posts = require("./controllers/posts");
 
-apiRouter.get("/", function(req, res) {
-      res.json({ message: "Long live the stoke list!" });
-});
-
-app.use("/api", apiRouter);
+app.use("/api/posts", posts);
 
 var port = process.env.PORT;
 

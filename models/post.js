@@ -26,8 +26,8 @@ var post = sql.define({
 });
 
 function Post(params){
-  this.createdAt = new Date();
-  this.updatedAt = new Date();
+  // this.createdAt = new Date();
+  // this.updatedAt = new Date();
   this.sticky = false;
 
   if (params){
@@ -57,8 +57,6 @@ function Post(params){
     }
 
     //TODO assign the newly-created id to `this` if it's a create
-    console.log(sql.text);
-    console.log(sql.values);
     var t = this;
     db.query(sql.text, sql.values, function (err, res) {
       console.log(err, res);
@@ -79,7 +77,7 @@ Post.findRecent = function(includeUnverified, cb){
     .from(post);
 
   if (!includeUnverified){
-    query.where(post.verified.isNotNull());
+    query.where(post.emailVerified.isNotNull());
   }
 
   query.order(post.createdAt);
