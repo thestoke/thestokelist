@@ -23,6 +23,7 @@ npm install
 ```
 
 Configure your env:
+
 ```
 cp sample.env .env
 
