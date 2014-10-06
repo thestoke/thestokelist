@@ -21,8 +21,16 @@ router.route("/posts")
     });
   })
   .post(function(req, resp) {
-    // TODO: Collect attributes, auth'd email or email from request
-    // TODO:
+    var post = new Post(req.body);
+
+    post.save(function(errors, post){
+      var data = {};
+      if (errors){
+        data.errors = errors;
+      }
+      data.post = post;
+      resp.json(data);
+    });
   });
 
 module.exports = router;

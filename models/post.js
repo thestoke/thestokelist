@@ -37,6 +37,9 @@ function Post(params){
     }
   }
 
+  this.validate = function(){
+  }
+
   this.save = function(cb){
     var values = {};
 
@@ -56,15 +59,18 @@ function Post(params){
       var sql = post.update(values).toQuery();
     }
 
-    //TODO assign the newly-created id to `this` if it's a create
+    // TODO: Validate model
     var t = this;
-    db.query(sql.text, sql.values, function (err, res) {
-      console.log(err, res);
+    db.query(sql.text, sql.values, function(errors, res) {
       t.id = res.lastInsertId;
-      cb(t);
+      if (typeof cb === 'function'){
+        cb(errors, t);
+      }
     });
   }
 }
+
+Post.attributes = columns;
 
 Post.create = function(params, cb){
   var post = new Post(params);
