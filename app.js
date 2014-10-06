@@ -20,7 +20,7 @@ app.use(bodyParser.json());
 
 var posts = require("./controllers/posts");
 
-app.use("/api/posts", posts);
+app.use("/api", posts);
 
 var port = process.env.PORT;
 

@@ -6,10 +6,23 @@ var express = require('express');
 var router = express.Router();
 var Post = require('../models/post');
 
-router.get("/", function(req, res) {
-  Post.findRecentlyVerified(function(err, posts){
-    res.json(posts);
+router.route("/posts")
+  .get(function(req, resp) {
+    Post.findRecentlyVerified(function(err, posts){
+      var data = {};
+      if (err) {
+        // Into an array to match with how validation will happen on other routes
+        data.errors = [err];
+      }
+
+      data.posts = posts;
+
+      resp.json(data);
+    });
+  })
+  .post(function(req, resp) {
+    // TODO: Collect attributes, auth'd email or email from request
+    // TODO:
   });
-});
 
 module.exports = router;
