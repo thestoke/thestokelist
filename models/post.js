@@ -63,9 +63,9 @@ function Post(params){
     var t = this;
 
     db.query(sql.text, sql.values, function (errors, res) {
-      if (err) {
+      if (errors) {
         console.log("ERROR IN SAVE:");
-        console.log(err);
+        console.log(errors);
       } else {
         if (typeof t.id !== 'number'){
           t.id = res.lastInsertId;
@@ -91,6 +91,7 @@ Post.update = function(id, params, cb){
     }
     post.save(cb);
   });
+};
 
 Post.create = function(params, cb){
   var post = new Post(params);
@@ -180,6 +181,5 @@ Post.delete = function(id, cb) {
     cb(err, res);
   });
 }
-
 
 module.exports = Post;

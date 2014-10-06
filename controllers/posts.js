@@ -33,32 +33,32 @@ router.route("/posts")
     });
   });
 
-router.get("/:id", function(req, res) {
-   var id = req.params.id;
-   Post.findById(id, function(err,post) {
-      res.json(post);
-   })
-});
-
-router.post("/", function(req, res) {
-  Post.create(req.body.post, function(post) {
-   res.json(post);
-  });
-})
-
-router.put("/:id", function (req, res) {
-   Post.update(req.params.id, req.body.post, function(post) {
-      res.json(post);
-   })
-})
-
-router.delete("/:id", function (req, res) {
-   Post.delete(req.params.id, function(err, post) {
-      //TODO: Verify deletion/check if item exists before deleting?
-      res.status(204).send();
-   })
-})
-
-
+  router.route("/posts/:id")
+      .get(function(req, resp) {
+         Post.findById(req.params.id, function(errors,post) {
+            var data = {};
+            if (errors){
+               data.errors = errors;
+            }
+            data.post = post;
+            resp.json(data);
+         });
+      })
+      .put(function (req, resp) {
+         Post.update(req.params.id, req.body, function(errors,post) {
+            var data = {};
+            if (errors){
+               data.errors = errors;
+            }
+            data.post = post;
+            resp.json(data);
+         });
+      })
+      .delete(function (req, resp) {
+         Post.delete(req.params.id, function(err, post) {
+         //TODO: Verify deletion/check if item exists before deleting?
+            resp.status(204).send();
+         })
+      });
 
 module.exports = router;
