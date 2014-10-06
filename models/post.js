@@ -37,6 +37,9 @@ function Post(params){
     }
   }
 
+  this.validate = function(){
+  }
+
   this.save = function(cb){
     var values = {};
 
@@ -56,22 +59,26 @@ function Post(params){
       var sql = post.update(values).where(post.id.equals(values['id'])).toQuery();
     }
 
-    //TODO assign the newly-created id to `this` if it's a create
+    // TODO: Validate model
     var t = this;
-    db.query(sql.text, sql.values, function (err, res) {
+
+    db.query(sql.text, sql.values, function (errors, res) {
       if (err) {
         console.log("ERROR IN SAVE:");
         console.log(err);
       } else {
-        console.log(res)
         if (typeof t.id !== 'number'){
           t.id = res.lastInsertId;
         }
       }
-      cb(t);
+      if (typeof cb === 'function'){
+        cb(errors, t);
+      }
     });
   }
 }
+
+Post.attributes = columns;
 
 Post.update = function(id, params, cb){
   Post.findById(id, function(err,res) {
@@ -84,7 +91,6 @@ Post.update = function(id, params, cb){
     }
     post.save(cb);
   });
-}
 
 Post.create = function(params, cb){
   var post = new Post(params);
