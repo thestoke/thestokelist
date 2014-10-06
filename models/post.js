@@ -53,17 +53,37 @@ function Post(params){
       var sql = post.insert(values).toQuery();
     }
     else{
-      var sql = post.update(values).toQuery();
+      var sql = post.update(values).where(post.id.equals(values['id'])).toQuery();
     }
 
     //TODO assign the newly-created id to `this` if it's a create
     var t = this;
     db.query(sql.text, sql.values, function (err, res) {
-      console.log(err, res);
-      t.id = res.lastInsertId;
+      if (err) {
+        console.log("ERROR IN SAVE:");
+        console.log(err);
+      } else {
+        console.log(res)
+        if (typeof t.id !== 'number'){
+          t.id = res.lastInsertId;
+        }
+      }
       cb(t);
     });
   }
+}
+
+Post.update = function(id, params, cb){
+  Post.findById(id, function(err,res) {
+    //todo: Is there a better way to grab the first result?
+    var post = new Post(res.rows[0]);
+    for (var i in params){
+      if (columns.indexOf(i) != -1) {
+        post[i] = params[i];
+      }
+    }
+    post.save(cb);
+  });
 }
 
 Post.create = function(params, cb){
@@ -120,6 +140,38 @@ Post.findByEmail = function(email, cb){
       posts.push(post);
     }
     cb(err, posts);
+  });
+}
+
+Post.findById = function(id, cb) {
+  var sql = post
+    .select(post.star())
+    .from(post)
+    .where(
+      post.id.equals(id)
+    ).toQuery();
+  db.query(sql.text, sql.values, function(err, res) {
+    if (err){
+      // TODO: real logging
+      console.log(err);
+    }
+    cb(err, res);
+  });
+}
+
+Post.delete = function(id, cb) {
+  var sql = post
+    .delete()
+    .from(post)
+    .where(
+      post.id.equals(id)
+    ).toQuery();
+  db.query(sql.text, sql.values, function(err, res) {
+    if (err){
+      // TODO: real logging
+      console.log(err);
+    }
+    cb(err, res);
   });
 }
 

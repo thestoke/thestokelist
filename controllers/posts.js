@@ -12,4 +12,32 @@ router.get("/", function(req, res) {
   });
 });
 
+router.get("/:id", function(req, res) {
+   var id = req.params.id;
+   Post.findById(id, function(err,post) {
+      res.json(post);
+   })
+});
+
+router.post("/", function(req, res) {
+  Post.create(req.body.post, function(post) {
+   res.json(post);
+  });
+})
+
+router.put("/:id", function (req, res) {
+   Post.update(req.params.id, req.body.post, function(post) {
+      res.json(post);
+   })
+})
+
+router.delete("/:id", function (req, res) {
+   Post.delete(req.params.id, function(err, post) {
+      //TODO: Verify deletion/check if item exists before deleting?
+      res.status(204).send();
+   })
+})
+
+
+
 module.exports = router;
