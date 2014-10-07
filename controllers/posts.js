@@ -55,9 +55,12 @@ router.route("/posts")
          });
       })
       .delete(function (req, resp) {
-         Post.delete(req.params.id, function(err, post) {
-         //TODO: Verify deletion/check if item exists before deleting?
-            resp.status(204).send();
+         Post.delete(req.params.id, function(errors, post) {
+            var data = {};
+            if (errors) {
+               data.errors = errors;
+            }
+            resp.json(data);
          })
       });
 

@@ -82,8 +82,8 @@ Post.attributes = columns;
 
 Post.update = function(id, params, cb){
   Post.findById(id, function(err,res) {
-    //todo: Is there a better way to grab the first result?
-    var post = new Post(res.rows[0]);
+    //todo: Handle errors
+    var post = new Post(res);
     for (var i in params){
       if (columns.indexOf(i) != -1) {
         post[i] = params[i];
@@ -109,17 +109,19 @@ Post.findRecent = function(includeUnverified, cb){
 
   query.order(post.createdAt);
 
-  db.query(query.toQuery().text, function(err, res){
-    if (err){
+  db.query(query.toQuery().text, function(errors, res){
+    if (errors){
       // TODO: real logging
-      console.log(err);
+      console.log(errors);
     }
     var posts = [];
     for (var x in res.rows){
       var post = new Post(res.rows[x]);
       posts.push(post);
     }
-    cb(err, posts);
+    if (typeof cb === 'function'){
+      cb(errors, posts);
+    }
   });
 };
 
@@ -136,17 +138,19 @@ Post.findByEmail = function(email, cb){
     )
     .order(post.createdAt).toQuery();
 
-  db.query(sql.text, sql.values, function(err, res){
-    if (err){
+  db.query(sql.text, sql.values, function(errors, res){
+    if (errors){
       // TODO: real logging
-      console.log(err);
+      console.log(errors);
     }
     var posts = [];
     for (var x in res.rows){
       var post = new Post(res.rows[x]);
       posts.push(post);
     }
-    cb(err, posts);
+    if (typeof cb === 'function'){
+      cb(errors, posts);
+    }
   });
 }
 
@@ -157,12 +161,14 @@ Post.findById = function(id, cb) {
     .where(
       post.id.equals(id)
     ).toQuery();
-  db.query(sql.text, sql.values, function(err, res) {
-    if (err){
+  db.query(sql.text, sql.values, function(errors, res) {
+    if (errors){
       // TODO: real logging
-      console.log(err);
+      console.log(errors);
     }
-    cb(err, res);
+    if (typeof cb === 'function'){
+      cb(errors, res.rows[0]);
+    }
   });
 }
 
@@ -173,12 +179,14 @@ Post.delete = function(id, cb) {
     .where(
       post.id.equals(id)
     ).toQuery();
-  db.query(sql.text, sql.values, function(err, res) {
-    if (err){
+  db.query(sql.text, sql.values, function(errors, res) {
+    if (errors){
       // TODO: real logging
-      console.log(err);
+      console.log(errors);
     }
-    cb(err, res);
+    if (typeof cb === 'function'){
+      cb(errors, res);
+    }
   });
 }
 
