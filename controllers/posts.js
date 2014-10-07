@@ -33,4 +33,35 @@ router.route("/posts")
     });
   });
 
+  router.route("/posts/:id")
+      .get(function(req, resp) {
+         Post.findById(req.params.id, function(errors,post) {
+            var data = {};
+            if (errors){
+               data.errors = errors;
+            }
+            data.post = post;
+            resp.json(data);
+         });
+      })
+      .put(function (req, resp) {
+         Post.update(req.params.id, req.body, function(errors,post) {
+            var data = {};
+            if (errors){
+               data.errors = errors;
+            }
+            data.post = post;
+            resp.json(data);
+         });
+      })
+      .delete(function (req, resp) {
+         Post.delete(req.params.id, function(errors, post) {
+            var data = {};
+            if (errors) {
+               data.errors = errors;
+            }
+            resp.json(data);
+         })
+      });
+
 module.exports = router;
