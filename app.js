@@ -18,6 +18,9 @@ app.use(expressSession({secret:process.env.COOKIE_SECRET,
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+app.use(express.static(__dirname + '/public'));
+
+
 var posts = require("./controllers/posts");
 
 app.use("/api", posts);
