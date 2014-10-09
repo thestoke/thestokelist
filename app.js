@@ -10,6 +10,7 @@ var app        = express();
 var bodyParser = require('body-parser');
 var expressSession = require('express-session');
 var cookieParser = require('cookie-parser');
+var postmark = require("postmark")(process.env.POSTMARK_KEY);
 
 app.use(cookieParser());
 app.use(expressSession({secret:process.env.COOKIE_SECRET,
