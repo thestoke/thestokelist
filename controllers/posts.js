@@ -23,6 +23,7 @@ router.route("/posts")
   .post(function(req, resp) {
     var post = new Post(req.body);
 
+    //todo: Remove guid/uuid/other fields users shouldn't be able to specify
     post.save(function(errors, post){
       var data = {};
       if (errors){
@@ -63,5 +64,22 @@ router.route("/posts")
             resp.json(data);
          })
       });
+
+   router.route("/posts/:guid")
+      .post(function(req, resp) {
+         Post.findByGuid(req.params.guid, function(errors,post) {
+            //Todo: What should we do about errors raised here?
+            post.verify();
+            post.save(function(errors, post){
+               var data = {};
+               if (errors){
+                  data.errors = errors;
+               }
+               data.post = post;
+               resp.json(data);
+            });
+         });
+      })
+      ;
 
 module.exports = router;

@@ -4,6 +4,7 @@
 
 var db = require('../lib/db');
 var sql = require('sql');
+var uuid = require("node-uuid");
 
 var columns = [
   'id',
@@ -26,10 +27,6 @@ var post = sql.define({
 });
 
 function Post(params){
-  // this.createdAt = new Date();
-  // this.updatedAt = new Date();
-  this.sticky = false;
-
   if (params){
     for (var i in columns){
       var attr = columns[i];
@@ -37,11 +34,33 @@ function Post(params){
     }
   }
 
+  if (this.sticky !== true) {
+      this.sticky = false;
+  }
+
   this.validate = function(){
+  }
+
+  this.verify = function() {
+    if (typeof this['emailVerified'] !== 'number') {
+      this['emailVerified'] = Date.now();
+    }
   }
 
   this.save = function(cb){
     var values = {};
+    var update = true;
+
+    //If ID is null, or anything not assigned by the database, set up record creation
+    if (typeof this.id !== 'number'){
+      update = false;
+      this.created_at = Date.now();
+      this.updated_at = this.created_at;
+      this.guid = uuid.v1();
+      this.id = null;
+    } else {
+      this.updated_at = Date.now();
+    }
 
     for (var i in columns){
       var attr = columns[i];
@@ -51,12 +70,12 @@ function Post(params){
     var sql = null;
 
     // We strip ID here if it's not a number (aka not assigned by the db)
-    if (typeof this.id !== 'number'){
-      delete values['id'];
-      var sql = post.insert(values).toQuery();
+    if (update){
+      var sql = post.update(values).where(post.id.equals(values['id'])).toQuery();
     }
     else{
-      var sql = post.update(values).where(post.id.equals(values['id'])).toQuery();
+      var sql = post.insert(values).toQuery();
+      
     }
 
     // TODO: Validate model
@@ -81,9 +100,9 @@ function Post(params){
 Post.attributes = columns;
 
 Post.update = function(id, params, cb){
-  Post.findById(id, function(err,res) {
+  Post.findById(id, function(err,post) {
     //todo: Handle errors
-    var post = new Post(res);
+    //todo: Make sure you can't edit things like id or uuid
     for (var i in params){
       if (columns.indexOf(i) != -1) {
         post[i] = params[i];
@@ -167,7 +186,27 @@ Post.findById = function(id, cb) {
       console.log(errors);
     }
     if (typeof cb === 'function'){
-      cb(errors, res.rows[0]);
+      var post = new Post(res.rows[0])
+      cb(errors, post);
+    }
+  });
+}
+
+Post.findByGuid = function(guid, cb) {
+  var sql = post
+    .select(post.star())
+    .from(post)
+    .where(
+      post.guid.equals(guid)
+    ).toQuery();
+  db.query(sql.text, sql.values, function(errors, res) {
+    if (errors){
+      // TODO: real logging
+      console.log(errors);
+    }
+    if (typeof cb === 'function'){
+      var post = new Post(res.rows[0])
+      cb(errors, post);
     }
   });
 }
