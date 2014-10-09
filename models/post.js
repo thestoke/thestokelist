@@ -54,12 +54,12 @@ function Post(params){
     //If ID is null, or anything not assigned by the database, set up record creation
     if (typeof this.id !== 'number'){
       update = false;
-      this.created_at = Date.now();
-      this.updated_at = this.created_at;
+      this.createdAt = Date.now();
+      this.updatedAt = this.createdAt;
       this.guid = uuid.v1();
       this.id = null;
     } else {
-      this.updated_at = Date.now();
+      this.updatedAt = Date.now();
     }
 
     for (var i in columns){
