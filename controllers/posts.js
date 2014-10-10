@@ -5,6 +5,7 @@
 var express = require('express');
 var router = express.Router();
 var Post = require('../models/post');
+var Session = require('../models/session');
 
 router.route("/posts")
   .get(function(req, resp) {
@@ -46,30 +47,10 @@ router.route("/posts")
          });
       })
       .put(function (req, resp) {
-         Post.update(req.params.id, req.body, function(errors,post) {
-            var data = {};
-            if (errors){
-               data.errors = errors;
-            }
-            data.post = post;
-            resp.json(data);
-         });
-      })
-      .delete(function (req, resp) {
-         Post.delete(req.params.id, function(errors, post) {
-            var data = {};
-            if (errors) {
-               data.errors = errors;
-            }
-            resp.json(data);
-         })
-      });
-
-   router.route("/posts/:guid")
-      .post(function(req, resp) {
-         Post.findByGuid(req.params.guid, function(errors,post) {
-            //Todo: What should we do about errors raised here?
-            post.verify();
+         var post = Post.findById(req.params.id, function(err,post) {
+         //todo: Handle errors
+         //todo: Make sure you can't edit things like id or uuid
+            post.update(req.body)
             post.save(function(errors, post){
                var data = {};
                if (errors){
@@ -80,6 +61,37 @@ router.route("/posts")
             });
          });
       })
-      ;
+      .delete(function (req, resp) {
+         var post = Post.findById(req.params.id, function(err,post) {
+         //todo: Handle errors
+         //todo: Make sure you can't edit things like id or uuid
+            post.delete(function(errors){
+               var data = {};
+               if (errors){
+                  data.errors = errors;
+               }
+               resp.json(data);
+            });
+         });
+      });
+
+   router.route("/posts/:guid")
+      .post(function(req, resp) {
+         Post.findByGuid(req.params.guid, function(errors,post) {
+            //Todo: What should we do about errors raised here?
+            post.verify();
+            post.save(function(errors, post){
+               Session.create(post.email, function(errors,session) {
+                  var data = {};
+                  if (errors){
+                     data.errors = errors;
+                  }
+                  req.session.token = session.token;
+                  data.post = post;
+                  resp.json(data);
+               });
+            });
+         });
+      });
 
 module.exports = router;
