@@ -220,7 +220,7 @@ Post.findById = function(id, cb) {
       console.log(errors);
     }
     if (typeof cb === 'function'){
-      var post = new Post(res.rows[0])
+      var post = new Post(res.rows[0]);
       cb(errors, post);
     }
   });

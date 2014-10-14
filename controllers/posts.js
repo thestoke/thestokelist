@@ -81,7 +81,7 @@ router.route("/posts")
             //Todo: What should we do about errors raised here?
             post.verify();
             post.save(function(errors, post){
-               Session.create(post.email, function(errors,session) {
+               Session.create({'email' : post.email}, function(errors,session) {
                   var data = {};
                   if (errors){
                      data.errors = errors;

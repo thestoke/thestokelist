@@ -23,8 +23,10 @@ app.use(express.static(__dirname + '/public'));
 
 
 var posts = require("./controllers/posts");
+var votes = require("./controllers/votes");
 
 app.use("/api", posts);
+app.use("/api", votes)
 
 var port = process.env.PORT;
 

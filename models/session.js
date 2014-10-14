@@ -18,8 +18,13 @@ var session = sql.define({
   columns: columns,
 });
 
-function Session(email){
-   this.email = email;
+function Session(params){
+  if (params){
+    for (var i in columns){
+      var attr = columns[i];
+      this[attr] = params[attr];
+    }
+  }
 
   this.initialize = function() {
       this.createdAt = Date.now();
@@ -107,7 +112,7 @@ Session.findByToken = function(token, cb) {
     .select(session.star())
     .from(session)
     .where(
-      session.token.equals(tplem)
+      session.token.equals(token)
     ).toQuery();
   db.query(sql.text, sql.values, function(errors, res) {
     if (errors){
