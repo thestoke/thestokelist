@@ -28,9 +28,8 @@ function Vote(params){
   }
 
   this.initialize = function() {
-      this.createdAt = Date.now();
-      this.token = uuid.v4();
       this.id = null;
+      this.createdAt = Date.now();
   }
 
   this.validate = function(){
@@ -66,13 +65,23 @@ function Vote(params){
       if (errors) {
         console.log("Error in Vote save:");
         console.log(errors);
-      } else {
-        if (typeof t.id !== 'number'){
-          t.id = res.lastInsertId;
+        if (typeof cb === 'function'){
+          cb(errors, t);
         }
-      }
-      if (typeof cb === 'function'){
-        cb(errors, t);
+      } else {
+        if (!update) {
+         t.id = res.lastInsertId;
+         Vote.findById(res.lastInsertId, function(errors, vote) {
+            t.createdAt = vote.createdAt;
+            if (typeof cb === 'function'){
+              cb(errors, t);
+            }
+         });
+        } else {
+        if (typeof cb === 'function'){
+          cb(errors, t);
+        }
+        }
       }
     });
   }
@@ -92,7 +101,31 @@ Vote.findByEmail = function(email, cb){
     .where(
       vote.email.equals(email)
     )
-    .order(post.createdAt).toQuery();
+    .order(vote.createdAt).toQuery();
+
+  db.query(sql.text, sql.values, function(errors, res){
+   if (errors){
+      // TODO: real logging
+      console.log(errors);
+   }
+   var votes = [];
+   for (var x in res.rows){
+      var vote = new Vote(res.rows[x]);
+      votes.push(vote);
+    }
+    if (typeof cb === 'function'){
+      cb(errors, votes);
+    }
+  });
+}
+
+Vote.findById = function(id, cb){
+  var sql = vote
+    .select(vote.star())
+    .from(vote)
+    .where(
+      vote.id.equals(id)
+    ).toQuery();
 
   db.query(sql.text, sql.values, function(errors, res){
     if (errors){
