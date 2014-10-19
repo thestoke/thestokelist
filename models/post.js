@@ -4,6 +4,8 @@
 
 var db = require('../lib/db');
 var sql = require('sql');
+var uuid = require("node-uuid");
+var postmark = require("postmark")(process.env.POSTMARK_KEY);
 
 var columns = [
   'id',
@@ -26,10 +28,6 @@ var post = sql.define({
 });
 
 function Post(params){
-  // this.createdAt = new Date();
-  // this.updatedAt = new Date();
-  this.sticky = false;
-
   if (params){
     for (var i in columns){
       var attr = columns[i];
@@ -37,11 +35,63 @@ function Post(params){
     }
   }
 
+  if (this.sticky !== true) {
+      this.sticky = false;
+  }
+
   this.validate = function(){
+  }
+
+  this.verify = function() {
+    if (typeof this['emailVerified'] !== 'number') {
+      this['emailVerified'] = Date.now();
+    }
+  }
+
+  this.initialize = function() {
+      this.createdAt = Date.now();
+      this.updatedAt = this.createdAt;
+      this.guid = uuid.v1();
+      this.id = null;
+  }
+
+  this.update = function(params) {
+    for (var i in params){
+      if (columns.indexOf(i) !== -1) {
+        this[i] = params[i];
+      }
+    }
   }
 
   this.save = function(cb){
     var values = {};
+    var update = true;
+
+    //If ID is null, or anything not assigned by the database, set up record creation
+    if (typeof this.id !== 'number'){
+      update = false;
+      this.initialize();
+      postmark.send({
+        "From": "list@thestoke.ca", 
+        "To": this.email,
+        "Subject": "Your Stoke List Post: " + this.title, 
+        "TextBody": "You're *almost* done!"+
+                    "\n\n"+
+                    "You must click the link below in order to verify your email address:"+
+                    "\n\n"+
+                    "http://post.thestoke.ca/posts/"+this.guid+
+                    "\n\n"+
+                    "10 minutes after that, you should see your post live."+
+                    "\n\n\n"+
+                    "To DELETE your post at any time, please visit this link:"+
+                    "\n"+
+                    "http://post.thestoke.ca/d/eeaf3201-a7dd-47a2-ab54-c0c283cebd35"+
+                    "\n\n"+
+                    "Thanks, The Stoke List."
+      });
+    } else {
+      this.updatedAt = Date.now();
+    }
 
     for (var i in columns){
       var attr = columns[i];
@@ -51,12 +101,11 @@ function Post(params){
     var sql = null;
 
     // We strip ID here if it's not a number (aka not assigned by the db)
-    if (typeof this.id !== 'number'){
-      delete values['id'];
-      var sql = post.insert(values).toQuery();
+    if (update){
+      var sql = post.update(values).where(post.id.equals(values['id'])).toQuery();
     }
     else{
-      var sql = post.update(values).where(post.id.equals(values['id'])).toQuery();
+      var sql = post.insert(values).toQuery();
     }
 
     // TODO: Validate model
@@ -76,22 +125,26 @@ function Post(params){
       }
     });
   }
+  this.delete = function(cb){
+    var sql = post
+    .delete()
+    .from(post)
+    .where(
+      post.id.equals(id)
+    ).toQuery();
+    db.query(sql.text, sql.values, function(errors, res) {
+      if (errors){
+      // TODO: real logging
+        console.log(errors);
+      }
+      if (typeof cb === 'function'){
+        cb(errors, res);
+      }
+    });
+  }
 }
 
 Post.attributes = columns;
-
-Post.update = function(id, params, cb){
-  Post.findById(id, function(err,res) {
-    //todo: Handle errors
-    var post = new Post(res);
-    for (var i in params){
-      if (columns.indexOf(i) != -1) {
-        post[i] = params[i];
-      }
-    }
-    post.save(cb);
-  });
-};
 
 Post.create = function(params, cb){
   var post = new Post(params);
@@ -167,17 +220,18 @@ Post.findById = function(id, cb) {
       console.log(errors);
     }
     if (typeof cb === 'function'){
-      cb(errors, res.rows[0]);
+      var post = new Post(res.rows[0]);
+      cb(errors, post);
     }
   });
 }
 
-Post.delete = function(id, cb) {
+Post.findByGuid = function(guid, cb) {
   var sql = post
-    .delete()
+    .select(post.star())
     .from(post)
     .where(
-      post.id.equals(id)
+      post.guid.equals(guid)
     ).toQuery();
   db.query(sql.text, sql.values, function(errors, res) {
     if (errors){
@@ -185,7 +239,8 @@ Post.delete = function(id, cb) {
       console.log(errors);
     }
     if (typeof cb === 'function'){
-      cb(errors, res);
+      var post = new Post(res.rows[0])
+      cb(errors, post);
     }
   });
 }

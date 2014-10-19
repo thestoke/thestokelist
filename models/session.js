@@ -8,19 +8,18 @@ var uuid = require("node-uuid");
 
 var columns = [
   'id',
-  'post_id',
   'email',
-  'like',
+  'token',
   'createdAt'
 ];
 
-var vote = sql.define({
-  name: 'votes',
+var session = sql.define({
+  name: 'sessions',
   columns: columns,
 });
 
-function Vote(params){
-   if (params){
+function Session(params){
+  if (params){
     for (var i in columns){
       var attr = columns[i];
       this[attr] = params[attr];
@@ -28,8 +27,9 @@ function Vote(params){
   }
 
   this.initialize = function() {
-      this.id = null;
       this.createdAt = Date.now();
+      this.token = uuid.v4();
+      this.id = null;
   }
 
   this.validate = function(){
@@ -51,11 +51,13 @@ function Vote(params){
     }
 
     var sql = null;
+
+    // We strip ID here if it's not a number (aka not assigned by the db)
     if (update){
-      var sql = vote.update(values).where(vote.id.equals(values['id'])).toQuery();
+      var sql = session.update(values).where(session.id.equals(values['id'])).toQuery();
     }
     else{
-      var sql = vote.insert(values).toQuery();
+      var sql = session.insert(values).toQuery();
     }
 
     // TODO: Validate model
@@ -63,69 +65,35 @@ function Vote(params){
 
     db.query(sql.text, sql.values, function (errors, res) {
       if (errors) {
-        console.log("Error in Vote save:");
+        console.log("Error in Session save:");
         console.log(errors);
-        if (typeof cb === 'function'){
-          cb(errors, t);
-        }
       } else {
-        if (!update) {
-         t.id = res.lastInsertId;
-         Vote.findById(res.lastInsertId, function(errors, vote) {
-            t.createdAt = vote.createdAt;
-            if (typeof cb === 'function'){
-              cb(errors, t);
-            }
-         });
-        } else {
-        if (typeof cb === 'function'){
-          cb(errors, t);
+        if (typeof t.id !== 'number'){
+          t.id = res.lastInsertId;
         }
-        }
+      }
+      if (typeof cb === 'function'){
+        cb(errors, t);
       }
     });
   }
 }
 
-Vote.attributes = columns;
+Session.attributes = columns;
 
-Vote.create = function(email, cb){
-  var vote = new Vote(email);
-  vote.save(cb);
+Session.create = function(email, cb){
+  var session = new Session(email);
+  session.save(cb);
 };
 
-Vote.findByEmail = function(email, cb){
-  var sql = vote
-    .select(vote.star())
-    .from(vote)
+Session.findByEmail = function(email, cb){
+  var sql = session
+    .select(session.star())
+    .from(session)
     .where(
-      vote.email.equals(email)
+      session.email.equals(email)
     )
-    .order(vote.createdAt).toQuery();
-
-  db.query(sql.text, sql.values, function(errors, res){
-   if (errors){
-      // TODO: real logging
-      console.log(errors);
-   }
-   var votes = [];
-   for (var x in res.rows){
-      var vote = new Vote(res.rows[x]);
-      votes.push(vote);
-    }
-    if (typeof cb === 'function'){
-      cb(errors, votes);
-    }
-  });
-}
-
-Vote.findById = function(id, cb){
-  var sql = vote
-    .select(vote.star())
-    .from(vote)
-    .where(
-      vote.id.equals(id)
-    ).toQuery();
+    .order(post.createdAt).toQuery();
 
   db.query(sql.text, sql.values, function(errors, res){
     if (errors){
@@ -133,10 +101,29 @@ Vote.findById = function(id, cb){
       console.log(errors);
     }
     if (typeof cb === 'function'){
-      var vote = new Vote(res.rows[0])
-      cb(errors, vote);
+      var session = new Session(res.rows[0])
+      cb(errors, session);
     }
   });
 }
 
-module.exports = Vote;
+Session.findByToken = function(token, cb) {
+  var sql = session
+    .select(session.star())
+    .from(session)
+    .where(
+      session.token.equals(token)
+    ).toQuery();
+  db.query(sql.text, sql.values, function(errors, res) {
+    if (errors){
+      // TODO: real logging
+      console.log(errors);
+    }
+    if (typeof cb === 'function'){
+      var session = new Session(res.rows[0])
+      cb(errors, session);
+    }
+  });
+}
+
+module.exports = Session;
