@@ -5,7 +5,7 @@
 var express = require('express');
 var router = express.Router();
 var Post = require('../models/post');
-var Session = require('../models/session');
+var Token = require('../models/token');
 
 router.route("/posts")
   .get(function(req, resp) {
@@ -15,9 +15,7 @@ router.route("/posts")
         // Into an array to match with how validation will happen on other routes
         data.errors = [err];
       }
-
       data.posts = posts;
-
       resp.json(data);
     });
   })
@@ -31,7 +29,13 @@ router.route("/posts")
         data.errors = errors;
       }
       data.post = post;
-      resp.json(data);
+      Token.create({'post_id' : post.id, 'email' : post.email}, function(errors, token) {
+        if (errors){
+          //TODO: Add errors
+        }
+        resp.json(data);
+      })
+
     });
   });
 
@@ -71,25 +75,6 @@ router.route("/posts")
                   data.errors = errors;
                }
                resp.json(data);
-            });
-         });
-      });
-
-   router.route("/posts/:guid")
-      .post(function(req, resp) {
-         Post.findByGuid(req.params.guid, function(errors,post) {
-            //Todo: What should we do about errors raised here?
-            post.verify();
-            post.save(function(errors, post){
-               Session.create({'email' : post.email}, function(errors,session) {
-                  var data = {};
-                  if (errors){
-                     data.errors = errors;
-                  }
-                  req.session.token = session.token;
-                  data.post = post;
-                  resp.json(data);
-               });
             });
          });
       });

@@ -4,8 +4,6 @@
 
 var db = require('../lib/db');
 var sql = require('sql');
-var uuid = require("node-uuid");
-var postmark = require("postmark")(process.env.POSTMARK_KEY);
 
 var columns = [
   'id',
@@ -14,7 +12,6 @@ var columns = [
   'location',
   'body',
   'email',
-  'guid',
   'sticky',
   'emailVerified',
   'deletedAt',
@@ -51,7 +48,6 @@ function Post(params){
   this.initialize = function() {
       this.createdAt = Date.now();
       this.updatedAt = this.createdAt;
-      this.guid = uuid.v1();
       this.id = null;
   }
 
@@ -70,25 +66,6 @@ function Post(params){
     //If ID is null, or anything not assigned by the database, set up record creation
     if (typeof this.id !== 'number'){
       update = false;
-      this.initialize();
-      postmark.send({
-        "From": "list@thestoke.ca", 
-        "To": this.email,
-        "Subject": "Your Stoke List Post: " + this.title, 
-        "TextBody": "You're *almost* done!"+
-                    "\n\n"+
-                    "You must click the link below in order to verify your email address:"+
-                    "\n\n"+
-                    "http://post.thestoke.ca/posts/"+this.guid+
-                    "\n\n"+
-                    "10 minutes after that, you should see your post live."+
-                    "\n\n\n"+
-                    "To DELETE your post at any time, please visit this link:"+
-                    "\n"+
-                    "http://post.thestoke.ca/d/eeaf3201-a7dd-47a2-ab54-c0c283cebd35"+
-                    "\n\n"+
-                    "Thanks, The Stoke List."
-      });
     } else {
       this.updatedAt = Date.now();
     }
@@ -148,6 +125,7 @@ Post.attributes = columns;
 
 Post.create = function(params, cb){
   var post = new Post(params);
+  post.initialize();
   post.save(cb);
 };
 

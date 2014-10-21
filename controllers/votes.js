@@ -4,22 +4,17 @@
 
 var express = require('express');
 var router = express.Router();
-var Session = require('../models/session');
 var Vote = require('../models/vote');
 
 router.route("/votes")
   .post(function(req, resp) {
-
+    //TODO: Make this 'checking for session' stuff middleware
     var session_token = req.session.token;
-    if (session_token === null || session_token === "") {
+    if (typeof req.session.email !== 'string') {
       resp.status(403);
-    }
-    Session.findByToken(session_token, function(errors, session) {
-      if (session === null || session === undefined) {
-      //throw session expired error
-        resp.status(403);
-      }
-      req.body.email = session.email;
+      resp.send("You're not logged in");
+    } else {
+      req.body.email = req.session.email;
       var vote = new Vote(req.body);
       //todo: Remove guid/uuid/other fields users shouldn't be able to specify
       vote.save(function(errors, vote){
@@ -30,7 +25,7 @@ router.route("/votes")
         data.vote = vote;
         resp.json(data);
       });
-    });
+    }
   });
 
 module.exports = router;
