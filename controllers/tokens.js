@@ -7,6 +7,18 @@ var router = express.Router();
 var Post = require('../models/post');
 var Token = require('../models/token');
 
+   router.route("/tokens")
+      .post(function(req, resp) {
+         Token.create({'email' : req.body.email}, function(errors, token) {
+            var data = {};
+            if (errors){
+               data.errors = errors;
+            }
+            resp.json(data);
+         })
+      });
+
+
    router.route("/tokens/:value")
       .put(function(req, resp) {
          Token.findByValue(req.params.value, function(errors,token) {

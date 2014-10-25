@@ -16,10 +16,10 @@ var RedisStore = require('connect-redis')(expressSession);
 app.use(cookieParser());
 app.use(expressSession({
   store: new RedisStore({
-    host: 'localhost',
-    port: 6379,
-    db: 1
-    //pass: 'RedisPASS'
+    host: process.env.REDIS_HOST,
+    port: parseInt(process.env.REDIS_PORT),
+    db: parseInt(process.env.REDIS_DB),
+    pass: process.env.REDIS_PASS
   }),
   secret: process.env.COOKIE_SECRET,
   saveUninitialized: true,
