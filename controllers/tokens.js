@@ -16,6 +16,14 @@ var Token = require('../models/token');
             }
             resp.json(data);
          })
+      })
+      .delete(function(req,resp) {
+         req.session.destroy(function(errors) {
+            var data = {};
+            if (errors){
+               data.errors = errors;
+            }
+            resp.json(data);
       });
 
 

@@ -129,4 +129,28 @@ Vote.findById = function(id, cb){
   });
 }
 
+Vote.findByPostId = function(post_id, cb){
+  var sql = vote
+    .select(vote.star())
+    .from(vote)
+    .where(
+      vote.post_id.equals(post_id)
+    ).toQuery();
+
+  db.query(sql.text, sql.values, function(errors, res){
+    if (errors){
+      // TODO: real logging
+      console.log(errors);
+    }
+    if (typeof cb === 'function'){
+      var votes = [];
+      for (var x in res.rows){
+        var vote = new Vote(res.rows[x]);
+        votes.push(vote);
+      }
+      cb(errors, votes);
+    }
+  });
+}
+
 module.exports = Vote;

@@ -6,6 +6,7 @@ var express = require('express');
 var router = express.Router();
 var Post = require('../models/post');
 var Token = require('../models/token');
+var auth = require('../lib/auth')
 
 router.route("/posts")
   .get(function(req, resp) {
@@ -21,7 +22,6 @@ router.route("/posts")
   })
   .post(function(req, resp) {
     var post = new Post(req.body);
-
     //todo: Remove guid/uuid/other fields users shouldn't be able to specify
     post.save(function(errors, post){
       var data = {};
@@ -50,7 +50,7 @@ router.route("/posts")
             resp.json(data);
          });
       })
-      .put(function (req, resp) {
+      .put(auth, function (req, resp) {
          var post = Post.findById(req.params.id, function(err,post) {
          //todo: Handle errors
          //todo: Make sure you can't edit things like id or uuid
@@ -65,7 +65,7 @@ router.route("/posts")
             });
          });
       })
-      .delete(function (req, resp) {
+      .delete(auth, function (req, resp) {
          var post = Post.findById(req.params.id, function(err,post) {
          //todo: Handle errors
          //todo: Make sure you can't edit things like id or uuid
@@ -76,6 +76,18 @@ router.route("/posts")
                }
                resp.json(data);
             });
+         });
+      });
+
+  router.route("/posts/:id/votes")
+      .get(function(req, resp) {
+         Post.findByPostId(req.params.id, function(errors,votes) {
+            var data = {};
+            if (errors){
+               data.errors = errors;
+            }
+            data.votes = votes;
+            resp.json(data);
          });
       });
 

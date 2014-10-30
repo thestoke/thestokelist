@@ -20,6 +20,16 @@ router.route("/votes")
       data.vote = vote;
       resp.json(data);
     });
+  })
+  .get(auth, function(req, resp) {
+    Vote.findByEmail(req.session.email, function(err, votes){
+      var data = {};
+      if (err) {
+        data.errors = [err];
+      }
+      data.votes = votes;
+      resp.json(data);
+    });
   });
 
 module.exports = router;
