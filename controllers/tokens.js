@@ -9,6 +9,16 @@ var Token = require('../models/token');
 
    router.route("/tokens")
       .post(function(req, resp) {
+         //Validations
+          req.checkBody('email','Must not be blank').notEmpty();
+          req.checkBody('email','Must be a valid email address').isEmail();
+          var errors = req.validationErrors();
+          if (errors) {
+            var data = {errors: errors};
+            resp.json(data);
+            return;
+          }
+
          Token.create({'email' : req.body.email}, function(errors, token) {
             var data = {};
             if (errors){
@@ -24,14 +34,33 @@ var Token = require('../models/token');
                data.errors = errors;
             }
             resp.json(data);
+         })
       });
 
 
    router.route("/tokens/:value")
       .put(function(req, resp) {
+         req.checkParam('value','Invalid token value').isUUID();
+         var errors = req.validationErrors();
+         if (errors) {
+            var data = {errors: errors};
+            resp.json(data);
+            return;
+         }
+
          Token.findByValue(req.params.value, function(errors,token) {
+            if (errors) {
+               var data = {errors: errors};
+               resp.json(data);
+               return;
+            }
             if (token.post_id !== null) {
                Post.findById(token.post_id, function(errors,post) {
+                  if (errors) {
+                     var data = {errors: errors};
+                     resp.json(data);
+                     return;
+                  }
                   post.verify()
                   post.save(function(errors,post) {
                      var data = {};
@@ -45,12 +74,8 @@ var Token = require('../models/token');
                   })
                });
             } else {
-               var data = {};
-               if (errors){
-                  data.errors = errors;
-               }
-               data.post = post;
                req.session.email = token.email;
+               var data = {};
                resp.json(data);
             }
          })

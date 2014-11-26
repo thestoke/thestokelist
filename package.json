@@ -21,7 +21,8 @@
     "express-session": "^1.8.2",
     "postmark":  "^0.2.6",
     "node-uuid": "^1.4.1",
-    "connect-redis": "^2.1.0"
+    "connect-redis": "^2.1.0",
+    "express-validator": "^2.7.0"
 
   },
   "devDependencies": {

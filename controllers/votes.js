@@ -9,9 +9,17 @@ var auth = require('../lib/auth')
 
 router.route("/votes")
   .post(auth, function(req, resp) {
-    req.body.email = req.session.email;
-    var vote = new Vote(req.body);
-    //todo: Remove guid/uuid/other fields users shouldn't be able to specify
+    req.checkBody('post_id','Invalid post id').isInt();
+    req.sanitize('like').toBoolean();
+    var errors = req.validationErrors();
+    if (errors) {
+      var data = {errors: errors};
+      resp.json(data);
+      return;
+    }
+
+    var body = req.body;
+    var vote = new Vote({post_id: body.post_id, like: body.like, email: req.session.email});
     vote.save(function(errors, vote){
       var data = {};
       if (errors){

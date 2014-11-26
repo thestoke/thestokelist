@@ -12,6 +12,7 @@ var expressSession = require('express-session');
 var cookieParser = require('cookie-parser');
 var postmark = require("postmark")(process.env.POSTMARK_KEY);
 var RedisStore = require('connect-redis')(expressSession);
+var expressValidator = require('express-validator');
 
 app.use(cookieParser());
 app.use(expressSession({
@@ -28,6 +29,8 @@ app.use(expressSession({
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.use(expressValidator());
+
 
 app.use(express.static(__dirname + '/public'));
 
