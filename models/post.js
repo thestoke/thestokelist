@@ -107,7 +107,7 @@ function Post(params){
     .delete()
     .from(post)
     .where(
-      post.id.equals(id)
+      post.id.equals(this.id)
     ).toQuery();
     db.query(sql.text, sql.values, function(errors, res) {
       if (errors){
@@ -115,7 +115,7 @@ function Post(params){
         console.log(errors);
       }
       if (typeof cb === 'function'){
-        cb(errors, res);
+        cb(errors);
       }
     });
   }

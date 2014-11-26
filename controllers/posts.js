@@ -25,8 +25,7 @@ router.route("/posts")
     //Validations
     req.checkBody('title','Must not be blank').notEmpty();
     req.checkBody('title','Must be less than 255 characters').isLength(0,255);
-    req.checkBody('price','Must not be blank').notEmpty();
-    req.checkBody('price','Must be less than 255 characters').isLength(0,255);
+    req.checkBody('price','Must be less than 255 characters').optional().isLength(0,255);
     req.checkBody('location','Must be less than 255 characters').optional().isLength(0,255);
     req.checkBody('body','Must not be blank').notEmpty();
     req.checkBody('email','Must not be blank').notEmpty();
@@ -83,8 +82,7 @@ router.route("/posts")
       req.checkParams('id', 'Invalid id').isInt();
       req.checkBody('title','Must not be blank').notEmpty();
       req.checkBody('title','Must be less than 255 characters').isLength(0,255);
-      req.checkBody('price','Must not be blank').notEmpty();
-      req.checkBody('price','Must be less than 255 characters').isLength(0,255);
+      req.checkBody('price','Must be less than 255 characters').optional().isLength(0,255);
       req.checkBody('location','Must be less than 255 characters').optional().isLength(0,255);
       req.checkBody('body','Must not be blank').notEmpty();
       var errors = req.validationErrors();
@@ -98,6 +96,10 @@ router.route("/posts")
         if (err) {
           var data = {errors: err}
           resp.json(err);
+          return;
+        }
+        if (post.email !== req.session.email) {
+          resp.status(403);
           return;
         }
         var body = req.body;
@@ -126,6 +128,10 @@ router.route("/posts")
         if (err) {
           var data = {errors: errors};
           resp.json(data);
+          return;
+        }
+        if (post.email !== req.session.email) {
+          resp.status(403);
           return;
         }
         post.delete(function(errors){

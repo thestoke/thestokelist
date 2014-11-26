@@ -40,7 +40,7 @@ var Token = require('../models/token');
 
    router.route("/tokens/:value")
       .put(function(req, resp) {
-         req.checkParam('value','Invalid token value').isUUID();
+         req.checkParams('value','Invalid token value').isUUID();
          var errors = req.validationErrors();
          if (errors) {
             var data = {errors: errors};
