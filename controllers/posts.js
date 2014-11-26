@@ -41,15 +41,17 @@ router.route("/posts")
     var body = req.body;
     var post = new Post({title: body.title, price: body.price, location: body.location, body: body.body, email: body.email});
     post.save(function(errors, post){
-      var data = {};
       if (errors){
-        data.errors = errors;
+        var data = {errors : errors};
+        resp.json(data);
+        return;
       }
-      data.post = post;
       Token.create({'post_id' : post.id, 'email' : post.email}, function(errors, token) {
+        var data = {};
         if (errors){
-          //TODO: Add errors
+          data.errors = errors;
         }
+        data.post = post;
         resp.json(data);
       })
 
@@ -93,7 +95,11 @@ router.route("/posts")
       }
 
       var post = Post.findById(req.params.id, function(err,post) {
-        //todo: Handle errors
+        if (err) {
+          var data = {errors: err}
+          resp.json(err);
+          return;
+        }
         var body = req.body;
         post.update({title: body.title, price: body.price, location: body.location, body: body.body});
         post.save(function(errors, post){

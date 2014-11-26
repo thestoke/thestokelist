@@ -65,7 +65,6 @@ var Token = require('../models/token');
                   post.save(function(errors,post) {
                      var data = {};
                      if (errors){
-                        //TODO: include all errors
                         data.errors = errors;
                      }
                      data.post = post;
