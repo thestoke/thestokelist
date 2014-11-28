@@ -98,20 +98,21 @@ router.route("/posts")
           resp.json(err);
           return;
         }
-        if (post.email !== req.session.email) {
+        if (post.email == req.session.email || req.session.admin) {
+          var body = req.body;
+          post.update({title: body.title, price: body.price, location: body.location, body: body.body});
+          post.save(function(errors, post){
+            var data = {};
+            if (errors){
+              data.errors = errors;
+            }
+            data.post = post;
+            resp.json(data);
+          });
+        } else {
           resp.status(403);
           return;
         }
-        var body = req.body;
-        post.update({title: body.title, price: body.price, location: body.location, body: body.body});
-        post.save(function(errors, post){
-          var data = {};
-          if (errors){
-            data.errors = errors;
-          }
-          data.post = post;
-          resp.json(data);
-        });
       });
     })
     .delete(auth, function (req, resp) {
@@ -130,17 +131,18 @@ router.route("/posts")
           resp.json(data);
           return;
         }
-        if (post.email !== req.session.email) {
+        if (post.email == req.session.email || req.session.admin) {
+          post.delete(function(errors){
+            var data = {};
+            if (errors){
+              data.errors = errors;
+            }
+            resp.json(data);
+          });
+        } else {
           resp.status(403);
           return;
         }
-        post.delete(function(errors){
-          var data = {};
-          if (errors){
-            data.errors = errors;
-          }
-          resp.json(data);
-        });
       });
     });
 

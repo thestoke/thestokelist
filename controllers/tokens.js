@@ -68,16 +68,30 @@ var Token = require('../models/token');
                         data.errors = errors;
                      }
                      data.post = post;
-                     req.session.email = token.email;
+                     setSession(req.session,token.email)
                      resp.json(data);
                   })
                });
             } else {
-               req.session.email = token.email;
+               setSession(req.session,token.email)
                var data = {};
                resp.json(data);
             }
          })
       });
+
+ function setSession(session,email) {
+   session.email = email;
+   var adminEmails = process.env.ADMIN_EMAILS.split(',');
+   if (adminEmails) {
+      for (var i = 0; i < adminEmails; i++) {
+          if (adminEmails[i] == email) {
+            session.admin == true;
+            break;
+          };
+
+      }
+   }
+ }
 
 module.exports = router;
