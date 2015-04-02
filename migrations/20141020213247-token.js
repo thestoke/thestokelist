@@ -3,22 +3,21 @@ var type = dbm.dataType;
 
 exports.up = function(db, callback) {
    db.createTable(
-    'sessions', {
+    'tokens', {
       id: {
         type: 'int',
         primaryKey: true
       },
+      value:    'string',
       email:    'string',
-      token:    'string',
-      createdAt: {
-        type: 'datetime',
-        defaultValue: 'current_timestamp'
-      }
+      post_id:    'int',
+      createdAt: 'datetime'
     },
     callback
   );
+
 };
 
 exports.down = function(db, callback) {
-  db.dropTable('sessions', callback);
+     db.dropTable('tokens', callback);
 };

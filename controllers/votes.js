@@ -4,32 +4,39 @@
 
 var express = require('express');
 var router = express.Router();
-var Session = require('../models/session');
 var Vote = require('../models/vote');
+var auth = require('../lib/auth')
 
 router.route("/votes")
-  .post(function(req, resp) {
-
-    var session_token = req.session.token;
-    if (session_token === null || session_token === "") {
-      resp.status(403);
+  .post(auth, function(req, resp) {
+    req.checkBody('post_id','Invalid post id').isInt();
+    req.sanitize('like').toBoolean();
+    var errors = req.validationErrors();
+    if (errors) {
+      var data = {errors: errors};
+      resp.json(data);
+      return;
     }
-    Session.findByToken(session_token, function(errors, session) {
-      if (session === null || session === undefined) {
-      //throw session expired error
-        resp.status(403);
+
+    var body = req.body;
+    var vote = new Vote({post_id: body.post_id, like: body.like, email: req.session.email});
+    vote.save(function(errors, vote){
+      var data = {};
+      if (errors){
+        data.errors = errors;
       }
-      req.body.email = session.email;
-      var vote = new Vote(req.body);
-      //todo: Remove guid/uuid/other fields users shouldn't be able to specify
-      vote.save(function(errors, vote){
-        var data = {};
-        if (errors){
-          data.errors = errors;
-        }
-        data.vote = vote;
-        resp.json(data);
-      });
+      data.vote = vote;
+      resp.json(data);
+    });
+  })
+  .get(auth, function(req, resp) {
+    Vote.findByEmail(req.session.email, function(err, votes){
+      var data = {};
+      if (err) {
+        data.errors = [err];
+      }
+      data.votes = votes;
+      resp.json(data);
     });
   });
 

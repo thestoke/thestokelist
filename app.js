@@ -11,22 +11,37 @@ var bodyParser = require('body-parser');
 var expressSession = require('express-session');
 var cookieParser = require('cookie-parser');
 var postmark = require("postmark")(process.env.POSTMARK_KEY);
+var RedisStore = require('connect-redis')(expressSession);
+var expressValidator = require('express-validator');
 
 app.use(cookieParser());
-app.use(expressSession({secret:process.env.COOKIE_SECRET,
-                        saveUninitialized: true,
-                        resave: true}));
+app.use(expressSession({
+  store: new RedisStore({
+    host: process.env.REDIS_HOST,
+    port: parseInt(process.env.REDIS_PORT),
+    db: parseInt(process.env.REDIS_DB),
+    pass: process.env.REDIS_PASS
+  }),
+  secret: process.env.COOKIE_SECRET,
+  saveUninitialized: true,
+  resave: true
+}));
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.use(expressValidator());
+
 
 app.use(express.static(__dirname + '/public'));
 
 
 var posts = require("./controllers/posts");
 var votes = require("./controllers/votes");
+var tokens = require("./controllers/tokens");
 
 app.use("/api", posts);
-app.use("/api", votes)
+app.use("/api", votes);
+app.use("/api", tokens);
 
 var port = process.env.PORT;
 

@@ -18,7 +18,6 @@ exports.up = function(db, callback) {
       location: 'string',
       body:     'string', // This used to be description
       email:    'string',
-      guid:     'string',
       sticky: {
         type: 'boolean',
         defaultValue: false

@@ -36,6 +36,10 @@ DATABASE_URL: The url, including credentials to access the db. This can be eithe
 PORT: The port the server will run on
 COOKIE_SECRET: The secret used to encrypt the cookie. You should change this to a string of your choosing
 POSTMARK_KEY: Your Postmark API key
+REDIS_PORT: Redis Server Port
+REDIS_HOST: Redis Server Hostname
+REDIS_DB: Redis DB
+REDIS_PASS: Redis password
 ```
 
 ### Creating your Database

@@ -42,7 +42,6 @@ function Vote(params){
     //If ID is null, or anything not assigned by the database, set up record creation
     if (typeof this.id !== 'number'){
       update = false;
-      this.initialize();
     }
 
     for (var i in columns){
@@ -65,23 +64,13 @@ function Vote(params){
       if (errors) {
         console.log("Error in Vote save:");
         console.log(errors);
-        if (typeof cb === 'function'){
-          cb(errors, t);
-        }
       } else {
         if (!update) {
-         t.id = res.lastInsertId;
-         Vote.findById(res.lastInsertId, function(errors, vote) {
-            t.createdAt = vote.createdAt;
-            if (typeof cb === 'function'){
-              cb(errors, t);
-            }
-         });
-        } else {
-        if (typeof cb === 'function'){
-          cb(errors, t);
+          t.id = res.lastInsertId;
         }
-        }
+      }
+      if (typeof cb === 'function'){
+        cb(errors, t);
       }
     });
   }
@@ -91,6 +80,7 @@ Vote.attributes = columns;
 
 Vote.create = function(email, cb){
   var vote = new Vote(email);
+  vote.initialize();
   vote.save(cb);
 };
 
@@ -108,12 +98,12 @@ Vote.findByEmail = function(email, cb){
       // TODO: real logging
       console.log(errors);
    }
-   var votes = [];
-   for (var x in res.rows){
-      var vote = new Vote(res.rows[x]);
-      votes.push(vote);
-    }
     if (typeof cb === 'function'){
+      var votes = [];
+      for (var x in res.rows){
+        var vote = new Vote(res.rows[x]);
+        votes.push(vote);
+      }
       cb(errors, votes);
     }
   });
@@ -135,6 +125,30 @@ Vote.findById = function(id, cb){
     if (typeof cb === 'function'){
       var vote = new Vote(res.rows[0])
       cb(errors, vote);
+    }
+  });
+}
+
+Vote.findByPostId = function(post_id, cb){
+  var sql = vote
+    .select(vote.star())
+    .from(vote)
+    .where(
+      vote.post_id.equals(post_id)
+    ).toQuery();
+
+  db.query(sql.text, sql.values, function(errors, res){
+    if (errors){
+      // TODO: real logging
+      console.log(errors);
+    }
+    if (typeof cb === 'function'){
+      var votes = [];
+      for (var x in res.rows){
+        var vote = new Vote(res.rows[x]);
+        votes.push(vote);
+      }
+      cb(errors, votes);
     }
   });
 }
