@@ -7,7 +7,8 @@ var router = express.Router();
 var Post = require('../models/post');
 var Vote = require('../models/vote')
 var Token = require('../models/token');
-var auth = require('../lib/auth')
+var auth = require('../lib/auth');
+var validID = require('../lib/validID');
 
 router.route("/posts")
   .get(function(req, resp) {
@@ -22,21 +23,6 @@ router.route("/posts")
     });
   })
   .post(function(req, resp) {
-    //Validations
-    req.checkBody('title','Must not be blank').notEmpty();
-    req.checkBody('title','Must be less than 255 characters').isLength(0,255);
-    req.checkBody('price','Must be less than 255 characters').optional().isLength(0,255);
-    req.checkBody('location','Must be less than 255 characters').optional().isLength(0,255);
-    req.checkBody('body','Must not be blank').notEmpty();
-    req.checkBody('email','Must not be blank').notEmpty();
-    req.checkBody('email','Must be a valid email address').isEmail();
-    var errors = req.validationErrors();
-    if (errors) {
-      var data = {errors: errors};
-      resp.json(data);
-      return;
-    }
-
     var body = req.body;
     var post = new Post({title: body.title, price: body.price, location: body.location, body: body.body, email: body.email});
     post.save(function(errors, post){
@@ -58,16 +44,7 @@ router.route("/posts")
   });
 
   router.route("/posts/:id")
-    .get(function(req, resp) {
-      //Validations
-      req.checkParams('id', 'Invalid id').isInt();
-      var errors = req.validationErrors();
-      if (errors) {
-        var data = {errors: errors};
-        resp.json(data);
-        return;
-      }
-
+    .get(validID, function(req, resp) {
       Post.findById(req.params.id, function(errors,post) {
         var data = {};
         if (errors){
@@ -77,21 +54,7 @@ router.route("/posts")
         resp.json(data);
       });
     })
-    .put(auth, function (req, resp) {
-      //Validations
-      req.checkParams('id', 'Invalid id').isInt();
-      req.checkBody('title','Must not be blank').notEmpty();
-      req.checkBody('title','Must be less than 255 characters').isLength(0,255);
-      req.checkBody('price','Must be less than 255 characters').optional().isLength(0,255);
-      req.checkBody('location','Must be less than 255 characters').optional().isLength(0,255);
-      req.checkBody('body','Must not be blank').notEmpty();
-      var errors = req.validationErrors();
-      if (errors) {
-        var data = {errors: errors};
-        resp.json(data);
-        return;
-      }
-
+    .put(validID, auth, function (req, resp) {
       var post = Post.findById(req.params.id, function(err,post) {
         if (err) {
           var data = {errors: err}
@@ -115,16 +78,7 @@ router.route("/posts")
         }
       });
     })
-    .delete(auth, function (req, resp) {
-      //Validations
-      req.checkParams('id', 'Invalid id').isInt();
-      var errors = req.validationErrors();
-      if (errors) {
-        var data = {errors: errors};
-        resp.json(data);
-        return;
-      }
-
+    .delete(validID, auth, function (req, resp) {
       Post.findById(req.params.id, function(err,post) {
         if (err) {
           var data = {errors: errors};
@@ -147,16 +101,7 @@ router.route("/posts")
     });
 
   router.route("/posts/:id/votes")
-    .get(function(req, resp) {
-      //Validations
-      req.checkParams('id', 'Invalid id').isInt();
-      var errors = req.validationErrors();
-      if (errors) {
-        var data = {errors: errors};
-        resp.json(data);
-        return;
-      }
-
+    .get(validID, function(req, resp) {
       Vote.findByPostId(req.params.id, function(errors,votes) {
         var data = {};
         if (errors){

@@ -22,7 +22,8 @@
     "postmark":  "^0.2.6",
     "node-uuid": "^1.4.1",
     "connect-redis": "^2.1.0",
-    "express-validator": "^2.7.0"
+    "express-validator": "^2.7.0",
+    "validator": "^3.22.1"
 
   },
   "devDependencies": {
