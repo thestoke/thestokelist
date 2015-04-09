@@ -8,36 +8,23 @@ var Post = require('../models/post');
 var Vote = require('../models/vote')
 var Token = require('../models/token');
 var auth = require('../lib/auth');
-var validID = require('../lib/validID');
+var validID = require('../lib/validID')('id');
 
 router.route("/posts")
   .get(function(req, resp) {
-    Post.findRecentlyVerified(function(err, posts){
-      var data = {};
-      if (err) {
-        // Into an array to match with how validation will happen on other routes
-        data.errors = [err];
-      }
-      data.posts = posts;
-      resp.json(data);
+    Post.findRecentlyVerified(function(errors, posts){
+      checkForErrors(errors,'posts',posts,resp)
     });
   })
   .post(function(req, resp) {
     var body = req.body;
-    var post = new Post({title: body.title, price: body.price, location: body.location, body: body.body, email: body.email});
+    var post = new Post({title: body.title, price: body.price, location: body.location, body: body.body, email: body.email, ip: req.ip});
     post.save(function(errors, post){
-      if (errors){
-        var data = {errors : errors};
-        resp.json(data);
+      if (returnIfErrors(errors,resp)) {
         return;
       }
       Token.create({'post_id' : post.id, 'email' : post.email}, function(errors, token) {
-        var data = {};
-        if (errors){
-          data.errors = errors;
-        }
-        data.post = post;
-        resp.json(data);
+        checkForErrors(errors,'post',post,resp)
       })
 
     });
@@ -46,32 +33,23 @@ router.route("/posts")
   router.route("/posts/:id")
     .get(validID, function(req, resp) {
       Post.findById(req.params.id, function(errors,post) {
-        var data = {};
-        if (errors){
-          data.errors = errors;
-        }
-        data.post = post;
-        resp.json(data);
+        checkForEmptyRecord(post,resp);
+        checkForErrors(errors,'post',post,resp);
       });
     })
     .put(validID, auth, function (req, resp) {
-      var post = Post.findById(req.params.id, function(err,post) {
-        if (err) {
-          var data = {errors: err}
-          resp.json(err);
+      var post = Post.findById(req.params.id, function(errors,post) {
+        if (returnIfErrors(errors,resp)) {
           return;
         }
-        if (post.email == req.session.email || req.session.admin) {
+        if (post != null && (post.email == req.session.email || req.session.admin)) {
           var body = req.body;
           post.update({title: body.title, price: body.price, location: body.location, body: body.body});
           post.save(function(errors, post){
-            var data = {};
-            if (errors){
-              data.errors = errors;
-            }
-            data.post = post;
-            resp.json(data);
+            checkForErrors(errors,'post',post,resp)
           });
+        } else if checkForEmptyRecord(post,resp) {
+          return;
         } else {
           resp.status(403);
           return;
@@ -79,20 +57,16 @@ router.route("/posts")
       });
     })
     .delete(validID, auth, function (req, resp) {
-      Post.findById(req.params.id, function(err,post) {
-        if (err) {
-          var data = {errors: errors};
-          resp.json(data);
+      Post.findById(req.params.id, function(errors,post) {
+        if (returnIfErrors(errors,resp)) {
           return;
         }
-        if (post.email == req.session.email || req.session.admin) {
+        if (post != null && (post.email == req.session.email || req.session.admin)) {
           post.delete(function(errors){
-            var data = {};
-            if (errors){
-              data.errors = errors;
-            }
-            resp.json(data);
+            checkForErrors(errors,null,null,resp)
           });
+        } else if checkForEmptyRecord(post,resp) {
+          return;
         } else {
           resp.status(403);
           return;
@@ -103,13 +77,39 @@ router.route("/posts")
   router.route("/posts/:id/votes")
     .get(validID, function(req, resp) {
       Vote.findByPostId(req.params.id, function(errors,votes) {
-        var data = {};
-        if (errors){
-          data.errors = errors;
-        }
-        data.votes = votes;
-        resp.json(data);
+        checkForErrors(errors,votes,resp)
       });
     });
+
+    function checkForErrors(errors,recordName,record,resp) {
+      var data = {}
+      if (errors) {
+        data.errors = errors;
+        resp.status(400);
+      }
+      if (record && recordName) {
+        data[recordName] = record;
+      }
+      resp.json(data);
+    }
+
+    function returnIfErrors(errors,resp) {
+      if (errors) {
+          var data = {errors: errors};
+          resp.json(data);
+          return true;
+      } else {
+        return false;
+      }
+    }
+
+    function checkForEmptyRecord(record,resp) {
+      if (record == null) {
+        resp.status(404);
+        return true
+      } else {
+        return false;
+      }
+    }
 
 module.exports = router;

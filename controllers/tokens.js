@@ -9,20 +9,11 @@ var Token = require('../models/token');
 
    router.route("/tokens")
       .post(function(req, resp) {
-         //Validations
-          req.checkBody('email','Must not be blank').notEmpty();
-          req.checkBody('email','Must be a valid email address').isEmail();
-          var errors = req.validationErrors();
-          if (errors) {
-            var data = {errors: errors};
-            resp.json(data);
-            return;
-          }
-
          Token.create({'email' : req.body.email}, function(errors, token) {
             var data = {};
             if (errors){
                data.errors = errors;
+               resp.status(400);
             }
             resp.json(data);
          })
@@ -32,6 +23,7 @@ var Token = require('../models/token');
             var data = {};
             if (errors){
                data.errors = errors;
+               resp.status(400);
             }
             resp.json(data);
          })

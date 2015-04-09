@@ -17,7 +17,8 @@ var columns = [
   'emailVerified',
   'deletedAt',
   'createdAt',
-  'updatedAt'
+  'updatedAt',
+  'ip'
 ];
 
 var post = sql.define({
@@ -222,7 +223,10 @@ Post.findById = function(id, cb) {
       console.log(errors);
     }
     if (typeof cb === 'function'){
-      var post = new Post(res.rows[0]);
+      var post = null;
+      if (res.rows.length > 0) {
+        post = new Post(res.rows[0]);
+      }
       cb(errors, post);
     }
   });
@@ -241,7 +245,10 @@ Post.findByGuid = function(guid, cb) {
       console.log(errors);
     }
     if (typeof cb === 'function'){
-      var post = new Post(res.rows[0])
+      var post = null;
+      if (res.rows.length > 0) {
+        post = new Post(res.rows[0])
+      }
       cb(errors, post);
     }
   });

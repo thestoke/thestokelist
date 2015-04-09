@@ -6,6 +6,7 @@ var db = require('../lib/db');
 var sql = require('sql');
 var uuid = require("node-uuid");
 var postmark = require("postmark")(process.env.POSTMARK_KEY);
+var validator = require('validator');
 
 var columns = [
   'id',
@@ -35,6 +36,11 @@ function Token(params){
   }
 
   this.validate = function(){
+    var errors = [];
+    if (!validator.isEmail(this.email)) {
+      errors.push("Invalid or empty email address");
+    }
+    return errors;
   }
 
   this.sendMail = function() {
@@ -75,6 +81,13 @@ function Token(params){
   }
 
   this.save = function(cb){
+
+    validationErrors = this.validate();
+    if (validationErrors.length > 0) {
+      cb(validationErrors,null);
+      return;
+    }
+
     var values = {};
     var update = true;
 
@@ -122,8 +135,14 @@ Token.attributes = columns;
 Token.create = function(params, cb){
   var token = new Token(params);
   token.initialize();
-  token.sendMail();
-  token.save(cb);
+  token.save(function(errors,token) {
+    if (cb) {
+      cb(errors,token);
+    }
+    if (!errors) {
+      token.sendMail();
+    }
+  });
 };
 
 Token.findByEmail = function(email, cb){
