@@ -5,26 +5,29 @@
 var express = require('express');
 var router = express.Router();
 var Post = require('../models/post');
-var Vote = require('../models/vote')
+var Vote = require('../models/vote');
 var Token = require('../models/token');
 var auth = require('../lib/auth');
 var validID = require('../lib/validID')('id');
+var helper = require('../lib/controllerHelper');
+
+console.log(helper);
 
 router.route("/posts")
   .get(function(req, resp) {
     Post.findRecentlyVerified(function(errors, posts){
-      checkForErrors(errors,'posts',posts,resp)
+      helper.checkForErrors(errors,'posts',posts,resp)
     });
   })
   .post(function(req, resp) {
     var body = req.body;
     var post = new Post({title: body.title, price: body.price, location: body.location, body: body.body, email: body.email, ip: req.ip});
     post.save(function(errors, post){
-      if (returnIfErrors(errors,resp)) {
+      if (helper.returnIfErrors(errors,resp)) {
         return;
       }
       Token.create({'post_id' : post.id, 'email' : post.email}, function(errors, token) {
-        checkForErrors(errors,'post',post,resp)
+        helper.checkForErrors(errors,'post',post,resp);
       })
 
     });
@@ -33,22 +36,22 @@ router.route("/posts")
   router.route("/posts/:id")
     .get(validID, function(req, resp) {
       Post.findById(req.params.id, function(errors,post) {
-        checkForEmptyRecord(post,resp);
-        checkForErrors(errors,'post',post,resp);
+        helper.checkForEmptyRecord(post,resp);
+        helper.checkForErrors(errors,'post',post,resp);
       });
     })
     .put(validID, auth, function (req, resp) {
       var post = Post.findById(req.params.id, function(errors,post) {
-        if (returnIfErrors(errors,resp)) {
+        if (helper.returnIfErrors(errors,resp)) {
           return;
         }
         if (post != null && (post.email == req.session.email || req.session.admin)) {
           var body = req.body;
           post.update({title: body.title, price: body.price, location: body.location, body: body.body});
           post.save(function(errors, post){
-            checkForErrors(errors,'post',post,resp)
+            helper.checkForErrors(errors,'post',post,resp);
           });
-        } else if checkForEmptyRecord(post,resp) {
+        } else if (helper.checkForEmptyRecord(post,resp)) {
           return;
         } else {
           resp.status(403);
@@ -58,14 +61,14 @@ router.route("/posts")
     })
     .delete(validID, auth, function (req, resp) {
       Post.findById(req.params.id, function(errors,post) {
-        if (returnIfErrors(errors,resp)) {
+        if (helper.returnIfErrors(errors,resp)) {
           return;
         }
         if (post != null && (post.email == req.session.email || req.session.admin)) {
           post.delete(function(errors){
-            checkForErrors(errors,null,null,resp)
+            helper.checkForErrors(errors,null,null,resp)
           });
-        } else if checkForEmptyRecord(post,resp) {
+        } else if (helper.checkForEmptyRecord(post,resp)) {
           return;
         } else {
           resp.status(403);
@@ -77,39 +80,8 @@ router.route("/posts")
   router.route("/posts/:id/votes")
     .get(validID, function(req, resp) {
       Vote.findByPostId(req.params.id, function(errors,votes) {
-        checkForErrors(errors,votes,resp)
+        helper.checkForErrors(errors,votes,resp)
       });
     });
-
-    function checkForErrors(errors,recordName,record,resp) {
-      var data = {}
-      if (errors) {
-        data.errors = errors;
-        resp.status(400);
-      }
-      if (record && recordName) {
-        data[recordName] = record;
-      }
-      resp.json(data);
-    }
-
-    function returnIfErrors(errors,resp) {
-      if (errors) {
-          var data = {errors: errors};
-          resp.json(data);
-          return true;
-      } else {
-        return false;
-      }
-    }
-
-    function checkForEmptyRecord(record,resp) {
-      if (record == null) {
-        resp.status(404);
-        return true
-      } else {
-        return false;
-      }
-    }
 
 module.exports = router;
