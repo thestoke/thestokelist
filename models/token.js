@@ -82,7 +82,7 @@ function Token(params){
 
   this.save = function(cb){
 
-    validationErrors = this.validate();
+    var validationErrors = this.validate();
     if (validationErrors.length > 0) {
       cb(validationErrors,null);
       return;

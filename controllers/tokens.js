@@ -6,26 +6,19 @@ var express = require('express');
 var router = express.Router();
 var Post = require('../models/post');
 var Token = require('../models/token');
+var helper = require ('../lib/controllerHelper');
 
    router.route("/tokens")
       .post(function(req, resp) {
          Token.create({'email' : req.body.email}, function(errors, token) {
-            var data = {};
-            if (errors){
-               data.errors = errors;
-               resp.status(400);
-            }
-            resp.json(data);
+            helper.checkForErrors(errors,null,null,resp);
+            resp.json({});
          })
       })
       .delete(function(req,resp) {
          req.session.destroy(function(errors) {
-            var data = {};
-            if (errors){
-               data.errors = errors;
-               resp.status(400);
-            }
-            resp.json(data);
+            helper.checkForErrors(errors,null,null,resp);
+            resp.json({});
          })
       });
 
@@ -34,40 +27,27 @@ var Token = require('../models/token');
       .put(function(req, resp) {
          req.checkParams('value','Invalid token value').isUUID();
          var errors = req.validationErrors();
-         if (errors) {
-            var data = {errors: errors};
-            resp.json(data);
+         if (helper.checkForErrors(errors,null,null,resp)) {
             return;
          }
-
          Token.findByValue(req.params.value, function(errors,token) {
-            if (errors) {
-               var data = {errors: errors};
-               resp.json(data);
+            if (helper.checkForErrors(errors,null,null,resp)) {
                return;
             }
             if (token.post_id !== null) {
                Post.findById(token.post_id, function(errors,post) {
-                  if (errors) {
-                     var data = {errors: errors};
-                     resp.json(data);
+                  if (helper.checkForErrors(errors,null,null,resp)) {
                      return;
                   }
                   post.verify()
                   post.save(function(errors,post) {
-                     var data = {};
-                     if (errors){
-                        data.errors = errors;
-                     }
-                     data.post = post;
                      setSession(req.session,token.email)
-                     resp.json(data);
+                     helper.checkForErrors(errors,'post',post,resp)
                   })
                });
             } else {
                setSession(req.session,token.email)
-               var data = {};
-               resp.json(data);
+               resp.json({});
             }
          })
       });

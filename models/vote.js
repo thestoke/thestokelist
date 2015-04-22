@@ -5,6 +5,7 @@
 var db = require('../lib/db');
 var sql = require('sql');
 var uuid = require("node-uuid");
+var validator = require('validator');
 
 var columns = [
   'id',
@@ -33,9 +34,27 @@ function Vote(params){
   }
 
   this.validate = function(){
+    var errors = [];
+    if (!validator.isEmail(this.email)) {
+      errors.push("Invalid or empty email address");
+    }
+    if (!validator.isInt(this.post_id)) {
+      errors.push("post_id must be an integer")
+    }
+    if (!validator.isLength(this.like,1)) {
+      errors.push("like is a required field")
+    }
+    this.like = validator.toBoolean(this.like,true);
+    return errors;
   }
 
   this.save = function(cb){
+
+    var validationErrors = this.validate();
+    if (validationErrors.length > 0) {
+      cb(validationErrors,null);
+      return;
+    }
     var values = {};
     var update = true;
 

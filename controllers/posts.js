@@ -21,15 +21,18 @@ router.route("/posts")
   })
   .post(function(req, resp) {
     var body = req.body;
+    if (body.email === undefined && req.session.email) {
+      //If no e-mail supplied and logged in, use e-mail from session
+      body.email = req.session.email
+    }
     var post = new Post({title: body.title, price: body.price, location: body.location, body: body.body, email: body.email, ip: req.ip});
     post.save(function(errors, post){
-      if (helper.returnIfErrors(errors,resp)) {
+      if (helper.checkForErrors(errors,null,null,resp)) {
         return;
       }
       Token.create({'post_id' : post.id, 'email' : post.email}, function(errors, token) {
         helper.checkForErrors(errors,'post',post,resp);
       })
-
     });
   });
 
@@ -40,9 +43,10 @@ router.route("/posts")
         helper.checkForErrors(errors,'post',post,resp);
       });
     })
+
     .put(validID, auth, function (req, resp) {
       var post = Post.findById(req.params.id, function(errors,post) {
-        if (helper.returnIfErrors(errors,resp)) {
+        if (helper.checkForErrors(errors,null,null,resp)) {
           return;
         }
         if (post != null && (post.email == req.session.email || req.session.admin)) {
@@ -61,15 +65,15 @@ router.route("/posts")
     })
     .delete(validID, auth, function (req, resp) {
       Post.findById(req.params.id, function(errors,post) {
-        if (helper.returnIfErrors(errors,resp)) {
+        if (helper.checkForErrors(errors,null,null,resp)) {
           return;
-        }
-        if (post != null && (post.email == req.session.email || req.session.admin)) {
-          post.delete(function(errors){
-            helper.checkForErrors(errors,null,null,resp)
-          });
         } else if (helper.checkForEmptyRecord(post,resp)) {
           return;
+        } else if (post.email == req.session.email || req.session.admin) {
+          post.delete(function(errors){
+            helper.checkForErrors(errors,null,null,resp);
+            resp.json({});
+          });
         } else {
           resp.status(403);
           return;

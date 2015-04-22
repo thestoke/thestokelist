@@ -5,38 +5,20 @@
 var express = require('express');
 var router = express.Router();
 var Vote = require('../models/vote');
-var auth = require('../lib/auth')
+var auth = require('../lib/auth');
+var helper = require ('../lib/controllerHelper');
 
 router.route("/votes")
   .post(auth, function(req, resp) {
-    req.checkBody('post_id','Invalid post id').isInt();
-    req.sanitize('like').toBoolean();
-    var errors = req.validationErrors();
-    if (errors) {
-      var data = {errors: errors};
-      resp.json(data);
-      return;
-    }
-
     var body = req.body;
     var vote = new Vote({post_id: body.post_id, like: body.like, email: req.session.email});
     vote.save(function(errors, vote){
-      var data = {};
-      if (errors){
-        data.errors = errors;
-      }
-      data.vote = vote;
-      resp.json(data);
+      helper.checkForErrors(errors,'vote',vote,resp)
     });
   })
   .get(auth, function(req, resp) {
-    Vote.findByEmail(req.session.email, function(err, votes){
-      var data = {};
-      if (err) {
-        data.errors = [err];
-      }
-      data.votes = votes;
-      resp.json(data);
+    Vote.findByEmail(req.session.email, function(errors, votes){
+      helper.checkForErrors(errors,'votes',votes,resp)
     });
   });
 
