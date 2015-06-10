@@ -2,7 +2,7 @@
 
 ## Getting Started:
 
-This section covers how to get Appmaker running locally. The workflow is optimized for contributors.
+This section covers how to get the Stoke List API running locally. The workflow is optimized for contributors.
 
 ### Coding Style:
 
