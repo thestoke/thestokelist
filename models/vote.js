@@ -8,11 +8,9 @@ var uuid = require("node-uuid");
 var validator = require('validator');
 
 var columns = [
-  'id',
   'post_id',
   'email',
   'like',
-  'createdAt'
 ];
 
 var vote = sql.define({
@@ -44,11 +42,14 @@ function Vote(params){
     if (!validator.isLength(this.like,1)) {
       errors.push("like is a required field")
     }
+    //Force like input to a boolean
     this.like = validator.toBoolean(this.like,true);
     return errors;
   }
 
   this.save = function(cb){
+
+    var t = this;
 
     var validationErrors = this.validate();
     if (validationErrors.length > 0) {
@@ -56,39 +57,29 @@ function Vote(params){
       return;
     }
     var values = {};
-    var update = true;
-
-    //If ID is null, or anything not assigned by the database, set up record creation
-    if (typeof this.id !== 'number'){
-      update = false;
-    }
-
     for (var i in columns){
       var attr = columns[i];
       values[attr] = this[attr];
     }
 
-    var sql = null;
-    if (update){
-      var sql = vote.update(values).where(vote.id.equals(values['id'])).toQuery();
-    }
-    else{
-      var sql = vote.insert(values).toQuery();
-    }
-
-    // TODO: Validate model
-    var t = this;
+    var sql = vote.update(values).where([vote.post_id.equals(values['post_id']),vote.email.equals(values['email'])]).toQuery();
 
     db.query(sql.text, sql.values, function (errors, res) {
       if (errors) {
         console.log("Error in Vote save:");
         console.log(errors);
-      } else {
-        if (!update) {
-          t.id = res.lastInsertId;
-        }
-      }
-      if (typeof cb === 'function'){
+      } else if (res.rowCount == 0) {
+        //Update had 0 rows, so we need to actually create the record
+        var sql = vote.insert(values).toQuery();
+         db.query(sql.text, sql.values, function (errors, res) {
+          if (errors) {
+            console.log("Error in Vote save:");
+            console.log(errors);
+          } else if (typeof cb === 'function') {
+            cb(errors, t);
+          }
+        });
+      } else if (typeof cb === 'function') {
         cb(errors, t);
       }
     });
@@ -110,7 +101,7 @@ Vote.findByEmail = function(email, cb){
     .where(
       vote.email.equals(email)
     )
-    .order(vote.createdAt).toQuery();
+    .toQuery();
 
   db.query(sql.text, sql.values, function(errors, res){
    if (errors){
