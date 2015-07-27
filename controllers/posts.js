@@ -5,139 +5,74 @@
 var express = require('express');
 var router = express.Router();
 var Post = require('../models/post');
-var Vote = require('../models/vote')
+var Vote = require('../models/vote');
 var Token = require('../models/token');
-var auth = require('../lib/auth')
+var auth = require('../lib/auth');
+var validID = require('../lib/validID')('id');
+var helper = require('../lib/controllerHelper');
+
+console.log(helper);
 
 router.route("/posts")
   .get(function(req, resp) {
-    Post.findRecentlyVerified(function(err, posts){
-      var data = {};
-      if (err) {
-        // Into an array to match with how validation will happen on other routes
-        data.errors = [err];
-      }
-      data.posts = posts;
-      resp.json(data);
+    Post.findRecentlyVerified(function(errors, posts){
+      helper.checkForErrors(errors,'posts',posts,resp)
     });
   })
   .post(function(req, resp) {
-    //Validations
-    req.checkBody('title','Must not be blank').notEmpty();
-    req.checkBody('title','Must be less than 255 characters').isLength(0,255);
-    req.checkBody('price','Must be less than 255 characters').optional().isLength(0,255);
-    req.checkBody('location','Must be less than 255 characters').optional().isLength(0,255);
-    req.checkBody('body','Must not be blank').notEmpty();
-    req.checkBody('email','Must not be blank').notEmpty();
-    req.checkBody('email','Must be a valid email address').isEmail();
-    var errors = req.validationErrors();
-    if (errors) {
-      var data = {errors: errors};
-      resp.json(data);
-      return;
-    }
-
     var body = req.body;
-    var post = new Post({title: body.title, price: body.price, location: body.location, body: body.body, email: body.email});
+    if (body.email === undefined && req.session.email) {
+      //If no e-mail supplied and logged in, use e-mail from session
+      body.email = req.session.email
+    }
+    var post = new Post({title: body.title, price: body.price, location: body.location, body: body.body, email: body.email, ip: req.ip});
     post.save(function(errors, post){
-      if (errors){
-        var data = {errors : errors};
-        resp.json(data);
+      if (helper.checkForErrors(errors,null,null,resp)) {
         return;
       }
       Token.create({'post_id' : post.id, 'email' : post.email}, function(errors, token) {
-        var data = {};
-        if (errors){
-          data.errors = errors;
-        }
-        data.post = post;
-        resp.json(data);
+        helper.checkForErrors(errors,'post',post,resp);
       })
-
     });
   });
 
   router.route("/posts/:id")
-    .get(function(req, resp) {
-      //Validations
-      req.checkParams('id', 'Invalid id').isInt();
-      var errors = req.validationErrors();
-      if (errors) {
-        var data = {errors: errors};
-        resp.json(data);
-        return;
-      }
-
+    .get(validID, function(req, resp) {
       Post.findById(req.params.id, function(errors,post) {
-        var data = {};
-        if (errors){
-          data.errors = errors;
-        }
-        data.post = post;
-        resp.json(data);
+        helper.checkForEmptyRecord(post,resp);
+        helper.checkForErrors(errors,'post',post,resp);
       });
     })
-    .put(auth, function (req, resp) {
-      //Validations
-      req.checkParams('id', 'Invalid id').isInt();
-      req.checkBody('title','Must not be blank').notEmpty();
-      req.checkBody('title','Must be less than 255 characters').isLength(0,255);
-      req.checkBody('price','Must be less than 255 characters').optional().isLength(0,255);
-      req.checkBody('location','Must be less than 255 characters').optional().isLength(0,255);
-      req.checkBody('body','Must not be blank').notEmpty();
-      var errors = req.validationErrors();
-      if (errors) {
-        var data = {errors: errors};
-        resp.json(data);
-        return;
-      }
 
-      var post = Post.findById(req.params.id, function(err,post) {
-        if (err) {
-          var data = {errors: err}
-          resp.json(err);
+    .put(validID, auth, function (req, resp) {
+      var post = Post.findById(req.params.id, function(errors,post) {
+        if (helper.checkForErrors(errors,null,null,resp)) {
           return;
         }
-        if (post.email == req.session.email || req.session.admin) {
+        if (post != null && (post.email == req.session.email || req.session.admin)) {
           var body = req.body;
           post.update({title: body.title, price: body.price, location: body.location, body: body.body});
           post.save(function(errors, post){
-            var data = {};
-            if (errors){
-              data.errors = errors;
-            }
-            data.post = post;
-            resp.json(data);
+            helper.checkForErrors(errors,'post',post,resp);
           });
+        } else if (helper.checkForEmptyRecord(post,resp)) {
+          return;
         } else {
           resp.status(403);
           return;
         }
       });
     })
-    .delete(auth, function (req, resp) {
-      //Validations
-      req.checkParams('id', 'Invalid id').isInt();
-      var errors = req.validationErrors();
-      if (errors) {
-        var data = {errors: errors};
-        resp.json(data);
-        return;
-      }
-
-      Post.findById(req.params.id, function(err,post) {
-        if (err) {
-          var data = {errors: errors};
-          resp.json(data);
+    .delete(validID, auth, function (req, resp) {
+      Post.findById(req.params.id, function(errors,post) {
+        if (helper.checkForErrors(errors,null,null,resp)) {
           return;
-        }
-        if (post.email == req.session.email || req.session.admin) {
+        } else if (helper.checkForEmptyRecord(post,resp)) {
+          return;
+        } else if (post.email == req.session.email || req.session.admin) {
           post.delete(function(errors){
-            var data = {};
-            if (errors){
-              data.errors = errors;
-            }
-            resp.json(data);
+            helper.checkForErrors(errors,null,null,resp);
+            resp.json({});
           });
         } else {
           resp.status(403);
@@ -147,23 +82,9 @@ router.route("/posts")
     });
 
   router.route("/posts/:id/votes")
-    .get(function(req, resp) {
-      //Validations
-      req.checkParams('id', 'Invalid id').isInt();
-      var errors = req.validationErrors();
-      if (errors) {
-        var data = {errors: errors};
-        resp.json(data);
-        return;
-      }
-
+    .get(validID, function(req, resp) {
       Vote.findByPostId(req.params.id, function(errors,votes) {
-        var data = {};
-        if (errors){
-          data.errors = errors;
-        }
-        data.votes = votes;
-        resp.json(data);
+        helper.checkForErrors(errors,votes,resp)
       });
     });
 

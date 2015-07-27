@@ -37,7 +37,8 @@ exports.up = function(db, callback) {
       updatedAt: {
         type: 'datetime',
         defaultValue: 'current_timestamp'
-      }
+      },
+      ip: 'string'
     },
     callback
   );

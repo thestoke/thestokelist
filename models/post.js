@@ -4,6 +4,7 @@
 
 var db = require('../lib/db');
 var sql = require('sql');
+var validator = require('validator');
 
 var columns = [
   'id',
@@ -16,7 +17,8 @@ var columns = [
   'emailVerified',
   'deletedAt',
   'createdAt',
-  'updatedAt'
+  'updatedAt',
+  'ip'
 ];
 
 var post = sql.define({
@@ -37,6 +39,23 @@ function Post(params){
   }
 
   this.validate = function(){
+    var errors = [];
+    if (!validator.isEmail(this.email)) {
+      errors.push("Invalid or empty email address");
+    }
+    if (!validator.isLength(this.title,1,255)) {
+      errors.push("Title must be between 1 and 255 characters");
+    }
+    if (!validator.isLength(this.price,0,255)) {
+      errors.push("Price must be less than 255 characters");
+    }
+    if (!validator.isLength(this.location,0,255)) {
+      errors.push("Location must be less than 255 characters");
+    }
+    if (!validator.isLength(this.body,1)) {
+      errors.push("Body is a required field")
+    }
+    return errors;
   }
 
   this.verify = function() {
@@ -60,6 +79,12 @@ function Post(params){
   }
 
   this.save = function(cb){
+
+    var validationErrors = this.validate();
+    if (validationErrors.length > 0) {
+      cb(validationErrors,null);
+      return;
+    }
     var values = {};
     var update = true;
 
@@ -198,7 +223,10 @@ Post.findById = function(id, cb) {
       console.log(errors);
     }
     if (typeof cb === 'function'){
-      var post = new Post(res.rows[0]);
+      var post = null;
+      if (res.rows.length > 0) {
+        post = new Post(res.rows[0]);
+      }
       cb(errors, post);
     }
   });
@@ -217,7 +245,10 @@ Post.findByGuid = function(guid, cb) {
       console.log(errors);
     }
     if (typeof cb === 'function'){
-      var post = new Post(res.rows[0])
+      var post = null;
+      if (res.rows.length > 0) {
+        post = new Post(res.rows[0])
+      }
       cb(errors, post);
     }
   });
